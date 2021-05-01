@@ -157,8 +157,11 @@ let MiniviewClone = GObject.registerClass({
         }
 
         let [click_x, click_y] = event.get_coords();
+        this.click_x = click_x;
+        this.click_y = click_y;
         this.offset_x = click_x - this.x;
         this.offset_y = click_y - this.y;
+
 
         let button = event.get_button();
         let state = event.get_state();
@@ -193,6 +196,10 @@ let MiniviewClone = GObject.registerClass({
         let button = event.get_button();
         let state = event.get_state();
         let shift = (state & Clutter.ModifierType.SHIFT_MASK) != 0;
+        let [click_x, click_y] = event.get_coords();
+        let move_x = Math.abs(click_x - this.click_x);
+        let move_y = Math.abs(click_y - this.click_y);
+
 
         // alternative scroll
         if (shift) {
@@ -205,6 +212,11 @@ let MiniviewClone = GObject.registerClass({
         }
 
         if (button == 1) {
+            // TODO: Create settings for this
+            if (move_y < 2 && move_x < 2 && !this.inResizeCtrl && event.get_click_count() == 1) {
+                this.moveToOppositeCorner();
+            }
+
             if (this.inMove) {
                 this.inMove = false;
             }
@@ -305,6 +317,17 @@ let MiniviewClone = GObject.registerClass({
     setSource(win) {
         this._metaWin = win.meta_window;
         this._windowClone.set_source(win);
+    }
+
+    moveToOppositeCorner() {
+        let dw = global.display.get_monitor_geometry(0).width;
+        let dh = global.display.get_monitor_geometry(0).height;
+
+        let w = this.width * this.scale_x;
+        let h = this.height * this.scale_y;
+
+        this.x = dw - this.x - w;
+        this.y = dh - this.y - h;
     }
 });
 
